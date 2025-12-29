@@ -4,6 +4,12 @@
 const sfu_data_t EPSILON = 1e-5;
 
 void sfu_softmax(sfu_data_t* input, sfu_data_t* output, int size) {
+    if (size == 0) return;
+    if (size == 1) { // Special case for single element softmax
+        output[0] = 1.0f;
+        return;
+    }
+
     // Phase 1: Find max for numerical stability
     sfu_data_t max_val = input[0];
     for (int i = 1; i < size; ++i) {
@@ -75,3 +81,32 @@ void sfu_silu(sfu_data_t* input, sfu_data_t* output, int size) {
         output[i] = val * sigmoid;
     }
 }
+
+void sfu_element_mult(sfu_data_t* input_a, sfu_data_t* input_b, sfu_data_t* output, int size) {
+    for (int i = 0; i < size; ++i) {
+        output[i] = input_a[i] * input_b[i];
+    }
+}
+
+void sfu_rms_norm(sfu_data_t* input, sfu_data_t* gain, sfu_data_t* output, int size) {
+    // Phase 1: Calculate mean of squares using a double for precision
+    double sum_sq = 0.0;
+    for (int i = 0; i < size; ++i) {
+        sum_sq += (double)input[i] * (double)input[i];
+    }
+    sfu_data_t mean_sq = sum_sq / size;
+
+    // Phase 2: Calculate inverse square root
+    sfu_data_t inv_sqrt;
+#ifdef __SYNTHESIS__
+    inv_sqrt = hls::rsqrt(mean_sq + EPSILON);
+#else
+    inv_sqrt = 1.0f / std::sqrt(mean_sq + EPSILON);
+#endif
+
+    // Phase 3: Normalize and apply gain
+    for (int i = 0; i < size; ++i) {
+        output[i] = (input[i] * inv_sqrt) * gain[i];
+    }
+}
+

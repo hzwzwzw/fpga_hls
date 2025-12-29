@@ -1,2 +1,8 @@
 article.pdf
 test_*
+*_out/
+*_prj/
+*.bin
+*_test
+*.log
+generate

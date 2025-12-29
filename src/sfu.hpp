@@ -40,5 +40,18 @@ void sfu_element_add(sfu_data_t* input_a, sfu_data_t* input_b, sfu_data_t* outpu
  */
 void sfu_silu(sfu_data_t* input, sfu_data_t* output, int size);
 
+/**
+ * @brief Performs element-wise multiplication of two vectors.
+ */
+void sfu_element_mult(sfu_data_t* input_a, sfu_data_t* input_b, sfu_data_t* output, int size);
+
+/**
+ * @brief Performs RMS Normalization on a vector.
+ * RMSNorm(x_i) = (x_i / sqrt(mean_of_squares + epsilon)) * gain
+ * For LLaMA-2, the gain is a learned parameter.
+ */
+void sfu_rms_norm(sfu_data_t* input, sfu_data_t* gain, sfu_data_t* output, int size);
+
+
 
 #endif // SFU_HPP

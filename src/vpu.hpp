@@ -4,6 +4,9 @@
 // Use HLS-specific types only during high-level synthesis
 #ifdef __SYNTHESIS__
 #include <ap_int.h>
+// Define HLS-specific types for synthesis
+using vpu_data_t = ap_int<8>;
+using vpu_acc_t = ap_int<32>;
 #else
 // For C++ simulation, use standard integer types
 #include <cstdint>

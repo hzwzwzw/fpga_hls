@@ -5,13 +5,15 @@ void mpe_mv(
     vector_t vector_b,
     result_vector_t result
 ) {
+#pragma HLS ARRAY_PARTITION variable=matrix_a complete dim=1
+#pragma HLS ARRAY_PARTITION variable=vector_b complete dim=1
+#pragma HLS ARRAY_PARTITION variable=result complete dim=1
+
     // Iterate over each row of matrix_a
     // Each iteration computes one element of the output vector.
     MV_ROW_LOOP:
     for (int i = 0; i < MPE_ROWS; ++i) {
-#ifdef __SYNTHESIS__
-#pragma HLS UNROLL factor=MPE_ROWS
-#endif
+#pragma HLS UNROLL
         // For each row, compute the dot product with vector_b.
         // This is exactly what our VPU does.
         result[i] = vpu(matrix_a[i], vector_b);
