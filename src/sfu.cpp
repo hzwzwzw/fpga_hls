@@ -58,9 +58,37 @@ void sfu_layer_norm(sfu_data_t* input, sfu_data_t* output, int size) {
     }
 }
 
+void sfu_rms_norm(sfu_data_t* input, sfu_data_t* output, int size) {
+    // Phase 1: Calculate sum of squares
+    sfu_data_t sum_squares = 0;
+    for (int i = 0; i < size; ++i) {
+        sum_squares += input[i] * input[i];
+    }
+    sfu_data_t mean_squares = sum_squares / size;
+
+    // Phase 2: Calculate inverse square root
+    sfu_data_t inv_rms;
+#ifdef __SYNTHESIS__
+    inv_rms = hls::rsqrt(mean_squares + EPSILON);
+#else
+    inv_rms = 1.0f / std::sqrt(mean_squares + EPSILON);
+#endif
+
+    // Phase 3: Normalize
+    for (int i = 0; i < size; ++i) {
+        output[i] = input[i] * inv_rms;
+    }
+}
+
 void sfu_element_add(sfu_data_t* input_a, sfu_data_t* input_b, sfu_data_t* output, int size) {
     for (int i = 0; i < size; ++i) {
         output[i] = input_a[i] + input_b[i];
+    }
+}
+
+void sfu_element_mul(sfu_data_t* input_a, sfu_data_t* input_b, sfu_data_t* output, int size) {
+    for (int i = 0; i < size; ++i) {
+        output[i] = input_a[i] * input_b[i];
     }
 }
 

@@ -30,9 +30,20 @@ void sfu_softmax(sfu_data_t* input, sfu_data_t* output, int size);
 void sfu_layer_norm(sfu_data_t* input, sfu_data_t* output, int size);
 
 /**
+ * @brief Performs RMS Normalization on a vector.
+ * RMSNorm(x_i) = x_i * rsqrt(mean(x^2) + epsilon)
+ */
+void sfu_rms_norm(sfu_data_t* input, sfu_data_t* output, int size);
+
+/**
  * @brief Performs element-wise addition of two vectors.
  */
 void sfu_element_add(sfu_data_t* input_a, sfu_data_t* input_b, sfu_data_t* output, int size);
+
+/**
+ * @brief Performs element-wise multiplication of two vectors.
+ */
+void sfu_element_mul(sfu_data_t* input_a, sfu_data_t* input_b, sfu_data_t* output, int size);
 
 /**
  * @brief Performs SiLU (Sigmoid Linear Unit) activation on a vector.
