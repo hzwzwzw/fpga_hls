@@ -1,3 +1,8 @@
 article.pdf
 test_*
 *_prj
+/*_test
+weights*
+*.bin
+flight_llm
+dummy*

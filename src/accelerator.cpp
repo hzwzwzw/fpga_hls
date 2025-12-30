@@ -2,35 +2,44 @@
 
 // Helper functions for loading/storing tiles.
 // In HLS, these would be optimized to burst-read/write from global memory.
-void load_tile_a(const vpu_data_t A[MAX_MATRIX_ROWS][MAX_MATRIX_COLS], matrix_t tile_a, int tile_row, int k_tile) {
+void load_tile_a(const global_data_t* A, matrix_t tile_a, int tile_row, int k_tile, int K) {
     for (int i = 0; i < TILE_ROWS; ++i) {
         for (int j = 0; j < TILE_COLS; ++j) {
-            tile_a[i][j] = A[tile_row * TILE_ROWS + i][k_tile * TILE_COLS + j];
+            // A is stored in row-major order: index = row * K + col
+            int global_row = tile_row * TILE_ROWS + i;
+            int global_col = k_tile * TILE_COLS + j;
+            tile_a[i][j] = A[global_row * K + global_col];
         }
     }
 }
 
-void load_tile_b(const vpu_data_t B[MAX_MATRIX_ROWS][MAX_MATRIX_COLS], matrix_t tile_b, int k_tile, int tile_col) {
+void load_tile_b(const global_data_t* B, matrix_t tile_b, int k_tile, int tile_col, int N) {
     for (int i = 0; i < TILE_ROWS; ++i) {
         for (int j = 0; j < TILE_COLS; ++j) {
-            tile_b[i][j] = B[k_tile * TILE_ROWS + i][tile_col * TILE_COLS + j];
+            // B is stored in row-major order: index = row * N + col
+            int global_row = k_tile * TILE_ROWS + i;
+            int global_col = tile_col * TILE_COLS + j;
+            tile_b[i][j] = B[global_row * N + global_col];
         }
     }
 }
 
-void store_tile_c(vpu_acc_t C[MAX_MATRIX_ROWS][MAX_MATRIX_COLS], result_matrix_t tile_c, int tile_row, int tile_col) {
+void store_tile_c(global_acc_t* C, result_matrix_t tile_c, int tile_row, int tile_col, int N) {
     for (int i = 0; i < TILE_ROWS; ++i) {
         for (int j = 0; j < TILE_COLS; ++j) {
-            C[tile_row * TILE_ROWS + i][tile_col * TILE_COLS + j] = tile_c[i][j];
+            // C is stored in row-major order: index = row * N + col
+            int global_row = tile_row * TILE_ROWS + i;
+            int global_col = tile_col * TILE_COLS + j;
+            C[global_row * N + global_col] = tile_c[i][j];
         }
     }
 }
 
 
 void flight_llm_accelerator(
-    const vpu_data_t A[MAX_MATRIX_ROWS][MAX_MATRIX_COLS],
-    const vpu_data_t B[MAX_MATRIX_ROWS][MAX_MATRIX_COLS],
-    vpu_acc_t C[MAX_MATRIX_ROWS][MAX_MATRIX_COLS],
+    const global_data_t* A,
+    const global_data_t* B,
+    global_acc_t* C,
     int M, int K, int N
 ) {
     // Tiling loops
@@ -52,8 +61,8 @@ void flight_llm_accelerator(
 #pragma HLS PIPELINE
 #endif
                 // 1. Load tiles from global memory into on-chip BRAMs
-                load_tile_a(A, tile_a, tile_row, k_tile);
-                load_tile_b(B, tile_b, k_tile, tile_col);
+                load_tile_a(A, tile_a, tile_row, k_tile, K);
+                load_tile_b(B, tile_b, k_tile, tile_col, N);
 
                 // 2. Compute: Perform matrix multiplication on the tiles using the MPE
                 mpe_mm(tile_a, tile_b, partial_sum);
@@ -67,7 +76,7 @@ void flight_llm_accelerator(
             }
 
             // 4. Store the final computed tile from BRAM back to global memory
-            store_tile_c(C, tile_c, tile_row, tile_col);
+            store_tile_c(C, tile_c, tile_row, tile_col, N);
         }
     }
 }
